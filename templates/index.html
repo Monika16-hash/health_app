@@ -1,0 +1,189 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Health Prediction Dashboard</title>
+  {% if pending %}<meta http-equiv="refresh" content="4">{% endif %}
+  <!-- Bootstrap 5 + font from CDN -->
+  <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link href="{{ url_for('static', filename='style.css') }}" rel="stylesheet">
+</head>
+<body>
+
+<!-- ============ NAVBAR ============ -->
+<nav class="navbar app-nav navbar-dark mb-4">
+  <div class="container-xl">
+    <a class="navbar-brand" href="{{ url_for('index') }}"><span class="brand-mark"></span>Health Prediction</a>
+    <span class="navbar-text small">Blood test records with AI risk notes</span>
+  </div>
+</nav>
+
+<main class="container-xl pb-5">
+
+  <!-- ============ FLASH ALERTS (success / error / warning) ============ -->
+  {% with messages = get_flashed_messages(with_categories=true) %}
+    {% for category, message in messages %}
+      <div class="alert alert-{{ category }} alert-dismissible fade show" role="alert">
+        {{ message }}
+        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+      </div>
+    {% endfor %}
+  {% endwith %}
+
+  <!-- ============ SUMMARY STATS ============ -->
+  <div class="row g-3 mb-4">
+    <div class="col-6 col-lg-3"><div class="panel stat"><div class="label">Patients</div><div class="value num">{{ stats.total }}</div></div></div>
+    <div class="col-6 col-lg-3"><div class="panel stat"><div class="label">Average glucose</div><div class="value num">{{ stats.avg_glucose }} <span class="unit">mg/dL</span></div></div></div>
+    <div class="col-6 col-lg-3"><div class="panel stat"><div class="label">Average haemoglobin</div><div class="value num">{{ stats.avg_haemoglobin }} <span class="unit">g/dL</span></div></div></div>
+    <div class="col-6 col-lg-3"><div class="panel stat"><div class="label">Average cholesterol</div><div class="value num">{{ stats.avg_cholesterol }} <span class="unit">mg/dL</span></div></div></div>
+  </div>
+
+  <div class="row g-4">
+
+    <!-- ============ CREATE FORM ============ -->
+    <div class="col-lg-4">
+      <div class="panel">
+        <div class="panel-head"><h2>Add patient</h2></div>
+        <div class="panel-body">
+          <form action="{{ url_for('add_patient') }}" method="post" novalidate>
+
+            <div class="mb-3">
+              <label for="full_name" class="form-label">Full name</label>
+              <input type="text" id="full_name" name="full_name"
+                     class="form-control {{ 'is-invalid' if errors.full_name }}"
+                     value="{{ form.get('full_name', '') }}">
+              <div class="invalid-feedback">{{ errors.full_name }}</div>
+            </div>
+
+            <div class="mb-3">
+              <label for="date_of_birth" class="form-label">Date of birth</label>
+              <input type="text" id="date_of_birth" name="date_of_birth" placeholder="dd/mm/yyyy"
+                     class="form-control {{ 'is-invalid' if errors.date_of_birth }}"
+                     value="{{ form.get('date_of_birth', '') }}">
+              <div class="invalid-feedback">{{ errors.date_of_birth }}</div>
+            </div>
+
+            <div class="mb-3">
+              <label for="email" class="form-label">Email address</label>
+              <input type="email" id="email" name="email"
+                     class="form-control {{ 'is-invalid' if errors.email }}"
+                     value="{{ form.get('email', '') }}">
+              <div class="invalid-feedback">{{ errors.email }}</div>
+            </div>
+
+            <div class="row g-3 mb-3">
+              <div class="col-12 col-sm-4 col-lg-12 col-xl-4">
+                <label for="glucose" class="form-label">Glucose</label>
+                <input type="text" inputmode="decimal" id="glucose" name="glucose"
+                       class="form-control {{ 'is-invalid' if errors.glucose }}"
+                       value="{{ form.get('glucose', '') }}" placeholder="mg/dL">
+                <div class="invalid-feedback">{{ errors.glucose }}</div>
+              </div>
+              <div class="col-12 col-sm-4 col-lg-12 col-xl-4">
+                <label for="haemoglobin" class="form-label">Haemoglobin</label>
+                <input type="text" inputmode="decimal" id="haemoglobin" name="haemoglobin"
+                       class="form-control {{ 'is-invalid' if errors.haemoglobin }}"
+                       value="{{ form.get('haemoglobin', '') }}" placeholder="g/dL">
+                <div class="invalid-feedback">{{ errors.haemoglobin }}</div>
+              </div>
+              <div class="col-12 col-sm-4 col-lg-12 col-xl-4">
+                <label for="cholesterol" class="form-label">Cholesterol</label>
+                <input type="text" inputmode="decimal" id="cholesterol" name="cholesterol"
+                       class="form-control {{ 'is-invalid' if errors.cholesterol }}"
+                       value="{{ form.get('cholesterol', '') }}" placeholder="mg/dL">
+                <div class="invalid-feedback">{{ errors.cholesterol }}</div>
+              </div>
+            </div>
+
+            <div class="mb-3">
+              <label for="remarks" class="form-label">Remarks</label>
+              <textarea id="remarks" class="form-control" rows="2" disabled
+                        placeholder="Filled automatically by Gemini when you save"></textarea>
+            </div>
+
+            <button type="submit" class="btn btn-primary w-100" id="saveBtn">Save patient</button>
+          </form>
+        </div>
+      </div>
+    </div>
+
+    <!-- ============ PATIENT TABLE (READ) ============ -->
+    <div class="col-lg-8">
+      <div class="panel">
+        <div class="panel-head"><h2>Patient records</h2></div>
+        {% if patients %}
+        <div class="table-responsive">
+          <table class="table table-hover mb-0">
+            <thead>
+              <tr>
+                <th>#</th><th>Patient</th><th>DOB</th>
+                <th class="text-end">Glucose</th><th class="text-end">Hb</th><th class="text-end">Chol.</th>
+                <th>Remarks</th><th class="text-end">Actions</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for p in patients %}
+              <tr>
+                <td class="num">{{ p.id }}</td>
+                <td>{{ p.full_name }}<div class="small text-secondary">{{ p.email }}</div></td>
+                <td class="num text-nowrap">{{ p.dob_display }}</td>
+                <td class="num text-end">{{ p.glucose }}</td>
+                <td class="num text-end">{{ p.haemoglobin }}</td>
+                <td class="num text-end">{{ p.cholesterol }}</td>
+                <td class="remarks-cell {{ 'unavailable' if (p.remarks or '').startswith('AI assessment unavailable') }}">{{ p.remarks or '' }}</td>
+                <td class="text-end text-nowrap">
+                  <a href="{{ url_for('edit_patient', patient_id=p.id) }}" class="btn btn-sm btn-outline-secondary">Edit</a>
+                  <button type="button" class="btn btn-sm btn-outline-danger"
+                          data-bs-toggle="modal" data-bs-target="#deleteModal"
+                          data-action="{{ url_for('delete_patient', patient_id=p.id) }}"
+                          data-name="{{ p.full_name }}">Delete</button>
+                </td>
+              </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+        {% else %}
+        <div class="empty-state">
+          <p class="mb-1 fw-semibold">No patients yet</p>
+          <p class="mb-0 small">Fill in the form and choose Save patient to add the first record.</p>
+        </div>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+</main>
+
+<!-- ============ DELETE CONFIRMATION MODAL ============ -->
+<div class="modal fade" id="deleteModal" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered">
+    <form method="post" id="deleteForm" class="modal-content">
+      <div class="modal-header"><h5 class="modal-title">Delete patient</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button></div>
+      <div class="modal-body">Delete <strong id="deleteName"></strong>? This cannot be undone.</div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-light" data-bs-dismiss="modal">Cancel</button>
+        <button type="submit" class="btn btn-danger">Delete patient</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+<script>
+  // Fill the delete modal with the clicked patient's name and delete URL
+  document.getElementById('deleteModal').addEventListener('show.bs.modal', function (e) {
+    var btn = e.relatedTarget;
+    document.getElementById('deleteForm').action = btn.dataset.action;
+    document.getElementById('deleteName').textContent = btn.dataset.name;
+  });
+  // Show progress while Gemini is being called (the save takes a few seconds)
+  document.querySelector('form[action$="/add"]').addEventListener('submit', function () {
+    var b = document.getElementById('saveBtn');
+    b.disabled = true; b.textContent = 'Saving and generating assessment…';
+  });
+</script>
+</body>
+</html>

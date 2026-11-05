@@ -1,0 +1,44 @@
+/* Custom styling on top of Bootstrap 5 */
+:root {
+  --ink: #17313b;
+  --teal: #0f766e;
+  --teal-dark: #0b5a54;
+  --mist: #eef4f3;
+  --line: #d5e2e0;
+  --coral: #c2410c;
+}
+body {
+  font-family: "IBM Plex Sans", system-ui, -apple-system, "Segoe UI", sans-serif;
+  background: var(--mist);
+  color: var(--ink);
+}
+.app-nav { background: var(--ink); }
+.app-nav .navbar-brand { font-weight: 600; letter-spacing: .2px; }
+.brand-mark {
+  display: inline-block; width: .7rem; height: .7rem; border-radius: 50%;
+  background: #5eead4; margin-right: .5rem; box-shadow: 0 0 0 3px rgba(94,234,212,.25);
+}
+.panel {
+  background: #fff; border: 1px solid var(--line); border-radius: .5rem;
+}
+.panel-head { padding: 1rem 1.25rem; border-bottom: 1px solid var(--line); }
+.panel-head h2 { font-size: 1.05rem; font-weight: 600; margin: 0; }
+.panel-body { padding: 1.25rem; }
+
+.stat { padding: 1rem 1.25rem; }
+.stat .label { font-size: .85rem; color: #5b7580; }
+.stat .value { font-size: 1.75rem; font-weight: 600; line-height: 1.2; }
+.stat .unit { font-size: .8rem; color: #5b7580; font-weight: 400; }
+
+.btn-primary { --bs-btn-bg: var(--teal); --bs-btn-border-color: var(--teal);
+  --bs-btn-hover-bg: var(--teal-dark); --bs-btn-hover-border-color: var(--teal-dark);
+  --bs-btn-active-bg: var(--teal-dark); --bs-btn-active-border-color: var(--teal-dark); }
+.form-control:focus { border-color: var(--teal); box-shadow: 0 0 0 .2rem rgba(15,118,110,.18); }
+.form-label { font-weight: 500; font-size: .9rem; }
+
+.table thead th { font-size: .85rem; color: #5b7580; font-weight: 600; border-bottom-color: var(--line); white-space: nowrap; }
+.table td { vertical-align: middle; }
+.remarks-cell { min-width: 260px; max-width: 360px; font-size: .9rem; }
+.remarks-cell.unavailable { color: var(--coral); }
+.num { font-variant-numeric: tabular-nums; }
+.empty-state { text-align: center; padding: 2.5rem 1rem; color: #5b7580; }
