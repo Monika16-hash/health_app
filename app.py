@@ -378,7 +378,7 @@ def add_patient():
 
     # Gemini runs in the background, so the page responds immediately
     start_ai_job(cur.lastrowid, cleaned["glucose"], cleaned["haemoglobin"], cleaned["cholesterol"])
-    flash("Patient added. The AI assessment is being generated and will appear shortly.", "success")
+    flash("Patient added., "success")
     return redirect(url_for("index"))
 
 
